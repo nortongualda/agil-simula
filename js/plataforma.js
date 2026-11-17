@@ -172,13 +172,13 @@
   };
 
   /* ---------------- login ---------------- */
-  const css = `#login{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0C2B44,#0b4f8a);padding:16px}
-  #login .bx{background:#fff;border-radius:16px;padding:34px 34px 28px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;color:#0C2B44}
-  #login img{height:40px;display:block;margin-bottom:18px}#login h1{font-size:22px;margin:0 0 4px}#login p{color:#6a7886;font-size:14px;margin:0 0 18px}
-  #login label{display:block;font-size:12px;font-weight:700;color:#6a7886;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px}
-  #login input{width:100%;box-sizing:border-box;border:1px solid #dde3ea;border-radius:8px;padding:11px 12px;font-size:15px;font-family:inherit;color:#0C2B44;background:#fff}
-  #login button{width:100%;margin-top:18px;border:0;border-radius:8px;padding:12px;background:#F28C28;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
-  #login .msg{margin-top:12px;font-size:13px;color:#c0392b;min-height:16px}`;
+  const css = `#login{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0C2B44,#0b4f8a)}
+  #login .bx{background:#fff;border-radius:16px;padding:34px 34px 28px;width:min(400px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:Montserrat,sans-serif}
+  #login img{height:40px;display:block;margin-bottom:18px}#login h1{font-size:20px;color:#0C2B44;margin:0 0 4px}#login p{color:#6a7886;font-size:13px;margin:0 0 18px}
+  #login label{display:block;font-size:11px;font-weight:700;color:#6a7886;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px}
+  #login input{width:100%;box-sizing:border-box;border:1px solid #dde3ea;border-radius:8px;padding:11px 12px;font-size:14px;font-family:inherit}
+  #login button{width:100%;margin-top:18px;border:0;border-radius:8px;padding:12px;background:#F28C28;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+  #login .msg{margin-top:12px;font-size:12.5px;color:#c0392b;min-height:16px}#login .ok{color:#1f9d55}`;
   function telaLogin(modo, aviso) {
     let el = document.getElementById('login');
     if (!el) { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); el = document.createElement('div'); el.id = 'login'; document.body.appendChild(el); }
@@ -196,13 +196,13 @@
       };
       return;
     }
-    el.innerHTML = `<form class="bx"><img src="assets/logo-colorida.png" alt="Ágil Aduaneira"><h1>Ágil Simula</h1><p>Estudos de viabilidade de importação</p>
-    <label for="lem">E-mail</label><input type="email" id="lem" required autocomplete="username" placeholder="nome@agiladuaneira.com.br">
+    el.innerHTML = `<form class="bx"><img src="assets/logo-colorida.png" alt="Ágil Aduaneira"><h1>Ágil Simula</h1><p>Estudos de Viabilidade da Ágil Aduaneira</p>
+    <label for="lem">E-mail</label><input type="email" id="lem" required autocomplete="username" placeholder="seu.nome@agiladuaneira.com.br">
     <label for="lpw">Senha</label><input type="password" id="lpw" required autocomplete="current-password">
     <button type="submit">Entrar</button><div class="msg" id="lmsg"></div></form>`;
     if (aviso) document.getElementById('lmsg').textContent = aviso;
     el.querySelector('form').onsubmit = async e => {
-      e.preventDefault(); const m = document.getElementById('lmsg'); m.textContent = 'Entrando...';
+      e.preventDefault(); const m = document.getElementById('lmsg'); m.textContent = 'Entrando…';
       const { data, error } = await sb.auth.signInWithPassword({ email: document.getElementById('lem').value.trim(), password: document.getElementById('lpw').value });
       if (error) { m.textContent = /invalid/i.test(error.message) ? 'E-mail ou senha incorretos.' : error.message; return; }
       entrar(data.session);
