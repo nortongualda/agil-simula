@@ -178,7 +178,8 @@
   #login label{display:block;font-size:11px;font-weight:700;color:#6a7886;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px}
   #login input{width:100%;box-sizing:border-box;border:1px solid #dde3ea;border-radius:8px;padding:11px 12px;font-size:14px;font-family:inherit}
   #login button{width:100%;margin-top:18px;border:0;border-radius:8px;padding:12px;background:#F28C28;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
-  #login .msg{margin-top:12px;font-size:12.5px;color:#c0392b;min-height:16px}#login .ok{color:#1f9d55}`;
+  #login .msg{margin-top:12px;font-size:12.5px;color:#c0392b;min-height:16px}#login .ok{color:#1f9d55}
+  #login .bx,#login .bx *{line-height:normal}#login .bx{font-size:14px}#login input{background:#fff;color:#1d2a36;font-weight:400}#login label{line-height:normal}`;
   function telaLogin(modo, aviso) {
     let el = document.getElementById('login');
     if (!el) { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); el = document.createElement('div'); el.id = 'login'; document.body.appendChild(el); }
