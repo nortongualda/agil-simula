@@ -511,7 +511,7 @@ function calcular(){
     const ic=(it.icms!=null&&it.icms!==''?+it.icms:(g.icms||0))/100;it.icmsEf=ic*100;it.basePauta=0;
     const reg=REG_ICMS[g.icmsReg]?g.icmsReg:'integral';
     if(reg==='diferido'||reg==='isento'){it.icmsEf=0;it.vICMS=0;}
-    else if(reg==='pauta'){it.basePauta=(g.icmsPauta||0)*(it.peso||0);it.vICMS=it.basePauta*ic;}
+    else if(reg==='pauta'){it.icmsEf=0;it.vICMS=(g.icmsPauta||0)*(it.peso||0);}
     else it.vICMS=ic<1?base/(1-ic)*ic:0;});
   const auto=[]; const d=g.dias||0; let alto=false;
   if(mar&&g.destino==='pecem'&&g.carga==='lcl'){
@@ -572,7 +572,7 @@ function obsLista(){
   o.push(`Taxa Siscomex para ${fmt(g.adicoes,0)} adição(ões), conforme Portaria ME nº 4.131/2021.`);
   if(regIcms()==='diferido')o.push('ICMS diferido: não há recolhimento de ICMS no desembaraço.');
   else if(regIcms()==='isento')o.push('Operação isenta de ICMS.');
-  else if(regIcms()==='pauta')o.push(`ICMS calculado sobre pauta fiscal de ${brl(g.icmsPauta||0)} por kg líquido, com alíquota de ${fmt(g.icms,2)}%.`);
+  else if(regIcms()==='pauta')o.push(`ICMS por pauta: ${brl(g.icmsPauta||0)} por kg de peso líquido.`);
   (S.tribx||[]).filter(t=>t.v).forEach(t=>o.push(`${t.nome||'Tributo adicional'}: ${t.modo==='pct'?fmt(t.v,2)+'% sobre o valor aduaneiro':brl(t.v)}, rateado pelo valor aduaneiro dos itens${t.icms?' e incluído na base do ICMS':''}.`));
   o.push('Estimativa sujeita à confirmação da classificação fiscal, do câmbio e das tarifas vigentes na data da operação.');
   if(g.obsExtra&&g.obsExtra.trim())o.push(g.obsExtra.trim());
@@ -597,7 +597,7 @@ function pintar(){
   const mar=g.modal==='maritimo',lcl=mar&&g.carga==='lcl',pecem=mar&&g.destino==='pecem';
   $('boxTipo').hidden=!mar;$('boxCont').hidden=!mar||lcl;$('boxLcl').hidden=!(lcl||!mar);$('lblCbm').hidden=!lcl;
   const mFS=moedaFS();$('lblFrete').textContent=`Frete internacional (${mFS||'moeda'})`;$('lblSeguro').textContent=`Seguro (${mFS||'moeda'})`;
-  $('boxIcmsPct').hidden=icmsZero();$('boxPauta').hidden=regIcms()!=='pauta';
+  $('boxIcmsPct').hidden=icmsZero()||regIcms()==='pauta';$('boxPauta').hidden=regIcms()!=='pauta';
   $('boxCambioFS').hidden=!R.fsOutra;$('lblCambioFS').textContent=`Câmbio ${g.moedaFS||'frete/seguro'} (R$)`;
   $('hintRateio').textContent=R.rateioAviso;$('hintRateio').hidden=!R.rateioAviso;
   $('hintHonor').textContent=Math.abs((g.honor||0)-HONOR_PADRAO)<.005?`Padrão: 1,5 salário mínimo (${brl(SM)} em ${TAB_ANO}).`:`Valor informado. O padrão é 1,5 salário mínimo: ${brl(HONOR_PADRAO)}.`;
@@ -629,7 +629,7 @@ function pintar(){
   $('resItens').tFoot.innerHTML=`<tr><td colspan="2">Total</td>${CC.map(x=>c(x[2])).join('')}<td class="n">${fmtQ(R.its.reduce((a,b)=>a+b.qtd,0))}</td><td></td></tr>`;
   const gs=gruposNcm();
   GRUPOS=gs;
-  if(!$('resNcm').contains(document.activeElement))$('resNcm').tBodies[0].innerHTML=gs.map((x,j)=>`<tr><td class="ncm">${x.ncm?esc(x.ncm):'<span class="tag warn">Sem NCM</span>'}</td><td>${x.ben?`<span class="tag">${esc(x.ben)}</span>`:'Integral'}</td><td class="n">${pct(x.ii)}</td><td class="n">${pct(x.ipi)}</td><td class="n">${pct(x.pis)}</td><td class="n">${pct(x.cofins)}</td><td class="n">${icmsZero()?`<span class="tag">${REG_ICMS[regIcms()]}</span>`:`<input id="icms_${j}" class="num icms" data-grp="${j}" value="${x.own?esc(fmtIn(x.icms,2)):''}" placeholder="${esc(fmtIn(g.icms||0,2))}" aria-label="ICMS % da NCM ${esc(x.ncm)}"> %${regIcms()==='pauta'?' <small>s/ pauta</small>':''}`}</td></tr>`).join('');
+  if(!$('resNcm').contains(document.activeElement))$('resNcm').tBodies[0].innerHTML=gs.map((x,j)=>`<tr><td class="ncm">${x.ncm?esc(x.ncm):'<span class="tag warn">Sem NCM</span>'}</td><td>${x.ben?`<span class="tag">${esc(x.ben)}</span>`:'Integral'}</td><td class="n">${pct(x.ii)}</td><td class="n">${pct(x.ipi)}</td><td class="n">${pct(x.pis)}</td><td class="n">${pct(x.cofins)}</td><td class="n">${icmsZero()||regIcms()==='pauta'?`<span class="tag">${esc(icmsTxt(0))}</span>`:`<input id="icms_${j}" class="num icms" data-grp="${j}" value="${x.own?esc(fmtIn(x.icms,2)):''}" placeholder="${esc(fmtIn(g.icms||0,2))}" aria-label="ICMS % da NCM ${esc(x.ncm)}"> %`}</td></tr>`).join('');
   $('obs').innerHTML=obsLista().map(o=>`<li>${esc(o)}</li>`).join('');
   pintarJson();
   pintarStatus();
@@ -710,8 +710,8 @@ const REG_ICMS={integral:'Integral',diferido:'Diferido',pauta:'Pauta',isento:'Is
 const regIcms=()=>REG_ICMS[S.g.icmsReg]?S.g.icmsReg:'integral';
 const icmsZero=()=>regIcms()==='diferido'||regIcms()==='isento';
 /* texto do ICMS de uma NCM: Diferido, Isento, 18,00% ou 18,00% s/ pauta */
-const icmsTxt=v=>icmsZero()?REG_ICMS[regIcms()]:pct(v)+(regIcms()==='pauta'?' s/ pauta':'');
-const icmsGeralTxt=()=>{const g=S.g,r=regIcms();return icmsZero()?REG_ICMS[r]:r==='pauta'?`${fmt(g.icms,2)}% s/ pauta ${brl(g.icmsPauta||0)}/kg`:`${fmt(g.icms,2)}%`;};
+const icmsTxt=v=>icmsZero()?REG_ICMS[regIcms()]:regIcms()==='pauta'?`Pauta ${brl(S.g.icmsPauta||0)}/kg`:pct(v);
+const icmsGeralTxt=()=>{const g=S.g,r=regIcms();return icmsZero()?REG_ICMS[r]:r==='pauta'?`Pauta ${brl(g.icmsPauta||0)}/kg`:`${fmt(g.icms,2)}%`;};
 const listaComp=()=>[['Mercadoria (FOB)',R.fobBRL],['Frete internacional',R.freteBRL],['Seguro',R.seguroBRL],['Tributos',R.trib],['Despesas portuárias/aeroportuárias',R.autoT],['Outras despesas',R.extT],['Honorários de despacho',R.hon],['Total da operação',R.total]];
 
 /* ---------- resumo em texto ---------- */
@@ -953,7 +953,7 @@ function gerarXLS(){
   const fmtCols=(ws,cols,z,from)=>{const rg=X.utils.decode_range(ws['!ref']);for(let r=from;r<=rg.e.r;r++)cols.forEach(c=>{const a=X.utils.encode_cell({r,c});if(ws[a]&&typeof ws[a].v==='number')ws[a].z=z;});};
   const resumo=[['Ágil Soluções Aduaneiras'],['Estudo de Viabilidade de Importação'],['Referência',refVer(S.meta.codigo,S.meta.versao)],['Emitido em',dh(Date.now())],[],
     ['Cliente',g.cliente],['Exportador',g.exportador],['Fatura',g.fatura],['Data do estudo',dataBR(g.data)],['Modal',nomeModal()],['Origem',g.origem],['Destino',nomeDestino()],['Incoterm',g.incoterm],
-    ['Moeda',g.moeda],['Câmbio',g.cambio],...(R.fsOutra?[['Moeda do frete/seguro',g.moedaFS],['Câmbio do frete/seguro',g.cambioFS]]:[]),[`Valor da mercadoria (${g.moeda})`,r2(R.fobT)],[`Frete internacional (${moedaFS()})`,g.frete],[`Seguro (${moedaFS()})`,g.seguro],['Rateio do frete/seguro',R.porPeso?'Por peso líquido':'Por valor da mercadoria'],['Adições',g.adicoes],['Regime do ICMS',REG_ICMS[regIcms()]],['ICMS %',icmsZero()?0:g.icms],...(regIcms()==='pauta'?[['Pauta do ICMS (R$/kg)',g.icmsPauta||0]]:[]),['Dias de armazenagem',g.dias],['Carga',nomeCarga()],[],
+    ['Moeda',g.moeda],['Câmbio',g.cambio],...(R.fsOutra?[['Moeda do frete/seguro',g.moedaFS],['Câmbio do frete/seguro',g.cambioFS]]:[]),[`Valor da mercadoria (${g.moeda})`,r2(R.fobT)],[`Frete internacional (${moedaFS()})`,g.frete],[`Seguro (${moedaFS()})`,g.seguro],['Rateio do frete/seguro',R.porPeso?'Por peso líquido':'Por valor da mercadoria'],['Adições',g.adicoes],['Regime do ICMS',REG_ICMS[regIcms()]],['ICMS %',icmsZero()||regIcms()==='pauta'?0:g.icms],...(regIcms()==='pauta'?[['Pauta do ICMS (R$/kg)',g.icmsPauta||0]]:[]),['Dias de armazenagem',g.dias],['Carga',nomeCarga()],[],
     ['RESUMO'],['Total da operação',r2(R.total)],['Total de tributos',r2(R.trib)],['Valor aduaneiro',r2(R.vaT)],['Despesas locais e honorários',r2(R.despT)],[],
     ['TRIBUTOS'],...listaTrib().map(([a,b])=>[a,r2(b)]),[],['COMPOSIÇÃO DO CUSTO'],...listaComp().map(([a,b])=>[a,r2(b)])];
   const w1=X.utils.aoa_to_sheet(resumo);w1['!cols']=[{wch:34},{wch:22}];
@@ -962,7 +962,7 @@ function gerarXLS(){
   const w2=X.utils.aoa_to_sheet([['Ref.','Item','NCM','Benefício','Qtd.',`Valor unit. (${g.moeda})`,`Valor total (${g.moeda})`,'Peso líq. kg','II %','IPI %','PIS %','COFINS %'],
     ...R.its.map((it,i)=>[it.ref,it.desc||'Item '+(i+1),it.ncm,it.ben,it.qtd,it.unit,r2(it.fobM),it.peso,it.ii,it.ipi,it.pis,it.cofins])]);
   w2['!cols']=[{wch:14},{wch:32},{wch:12},{wch:16},{wch:8},{wch:14},{wch:16},{wch:12},{wch:7},{wch:7},{wch:7},{wch:9}];X.utils.book_append_sheet(wb,w2,'Carga');
-  const wN=X.utils.aoa_to_sheet([['NCM','Benefício','II %','IPI %','PIS %','COFINS %','ICMS %'],...gruposNcm().map(x=>[x.ncm||'Sem NCM',x.ben||'Integral',x.ii,x.ipi,x.pis,x.cofins,icmsZero()?REG_ICMS[regIcms()]:r2(x.icms)])]);
+  const wN=X.utils.aoa_to_sheet([['NCM','Benefício','II %','IPI %','PIS %','COFINS %','ICMS %'],...gruposNcm().map(x=>[x.ncm||'Sem NCM',x.ben||'Integral',x.ii,x.ipi,x.pis,x.cofins,icmsZero()||regIcms()==='pauta'?icmsTxt(0):r2(x.icms)])]);
   wN['!cols']=[{wch:14},{wch:18},{wch:8},{wch:8},{wch:8},{wch:10},{wch:8}];X.utils.book_append_sheet(wb,wN,'NCM e alíquotas');
   const CX=COLS();
   const w3=X.utils.aoa_to_sheet([['Item','NCM',...CX.map(x=>x[0]),'Qtd.','Unitário'],
